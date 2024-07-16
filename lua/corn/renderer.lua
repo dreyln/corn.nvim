@@ -1,5 +1,5 @@
-local utils = require 'corn.utils'
-local config = require 'corn.config'
+local utils = require "corn.utils"
+local config = require "corn.config"
 
 local M = {}
 
@@ -21,7 +21,7 @@ M.make_win_cfg = function(width, height, position, xoff, yoff)
     width = width <= 0 and 1 or width,
     height = height <= 0 and 1 or height,
     focusable = false,
-    style = 'minimal',
+    style = "minimal",
 
     border = config.opts.border_style,
     -- border = 'none',
@@ -46,7 +46,7 @@ M.make_win_cfg = function(width, height, position, xoff, yoff)
     rline, rcol = utils.get_cursor_relative_pos()
     cfg.anchor = "NE"
     cfg.col = vim.api.nvim_win_get_width(0)
-    cfg.row = rline +1
+    cfg.row = rline + 1
   end
 
   cfg.col = cfg.col + xoff
@@ -57,16 +57,18 @@ end
 
 M.setup = function()
   M.bufnr = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_set_option_value("undolevels", -1, {  buf = M.bufnr })
+  vim.api.nvim_set_option_value("undolevels", -1, { buf = M.bufnr })
 
-  M.ns = vim.api.nvim_create_namespace('corn')
+  M.ns = vim.api.nvim_create_namespace "corn"
 end
 
 M.toggle = function(state)
   if state == nil then
     M.state = not M.state
   else
-    if state == M.state then return end
+    if state == M.state then
+      return
+    end
     M.state = state
   end
 
@@ -74,20 +76,38 @@ M.toggle = function(state)
 end
 
 M.render = function(items)
+  if not vim.api.nvim_buf_is_valid(M.bufnr) then
+    M.bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_option_value("undolevels", -1, { buf = M.bufnr })
+  end
+  if vim.api.nvim_get_option_value("buftype", { buf = M.bufnr }) ~= "nofile" then
+    M.bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_option_value("undolevels", -1, { buf = M.bufnr })
+  end
   -- sorting
-  if config.opts.sort_method == 'column' then
-    table.sort(items, function(a, b) return a.col < b.col end)
-  elseif config.opts.sort_method == 'column_reverse' then
-    table.sort(items, function(a, b) return a.col > b.col end)
-  elseif config.opts.sort_method == 'severity' then
-    -- NOTE not needed since items already come ordered this way
-    -- table.sort(items, function(a, b) return a.severity < b.severity end)
-  elseif config.opts.sort_method == 'severity_reverse' then
-    table.sort(items, function(a, b) return a.severity > b.severity end)
-  elseif config.opts.sort_method == 'line_number' then
-    table.sort(items, function(a, b) return a.lnum < b.lnum end)
-  elseif config.opts.sort_method == 'line_number_reverse' then
-    table.sort(items, function(a, b) return a.lnum > b.lnum end)
+  if config.opts.sort_method == "column" then
+    table.sort(items, function(a, b)
+      return a.col < b.col
+    end)
+  elseif config.opts.sort_method == "column_reverse" then
+    table.sort(items, function(a, b)
+      return a.col > b.col
+    end)
+  elseif config.opts.sort_method == "severity" then
+  -- NOTE not needed since items already come ordered this way
+  -- table.sort(items, function(a, b) return a.severity < b.severity end)
+  elseif config.opts.sort_method == "severity_reverse" then
+    table.sort(items, function(a, b)
+      return a.severity > b.severity
+    end)
+  elseif config.opts.sort_method == "line_number" then
+    table.sort(items, function(a, b)
+      return a.lnum < b.lnum
+    end)
+  elseif config.opts.sort_method == "line_number_reverse" then
+    table.sort(items, function(a, b)
+      return a.lnum > b.lnum
+    end)
   end
 
   local item_lines = {}
@@ -112,7 +132,7 @@ M.render = function(items)
     item = config.opts.item_preprocess_func(item)
 
     -- splitting messages by \n and adding each as a separate line
-    local message_lines = vim.fn.split(item.message, '\n')
+    local message_lines = vim.fn.split(item.message, "\n")
     for j, message_line in ipairs(message_lines) do
       local line = ""
 
@@ -125,28 +145,30 @@ M.render = function(items)
       if j == 1 then
         append_to_line(utils.diag_severity_to_icon(item.severity), utils.diag_severity_to_hl_group(item.severity))
       else
-        append_to_line(' ', utils.diag_severity_to_hl_group(item.severity))
+        append_to_line(" ", utils.diag_severity_to_hl_group(item.severity))
       end
       -- message_line content
-      append_to_line(' ' .. message_line, utils.diag_severity_to_hl_group(item.severity))
+      append_to_line(" " .. message_line, utils.diag_severity_to_hl_group(item.severity))
       -- extra info on the last line only
       if j == #message_lines then
-        append_to_line(' ' .. item.code .. '', 'Folded')
-        append_to_line(' ' .. item.source, 'Comment')
-        if config.opts.scope == 'line' then
-          append_to_line(' ' .. ':' .. item.col, 'Comment')
-        elseif config.opts.scope == 'file' then
-          append_to_line(' ' .. item.lnum+1 .. ':' .. item.col, 'Comment')
+        append_to_line(" " .. item.code .. "", "Folded")
+        append_to_line(" " .. item.source, "Comment")
+        if config.opts.scope == "line" then
+          append_to_line(" " .. ":" .. item.col, "Comment")
+        elseif config.opts.scope == "file" then
+          append_to_line(" " .. item.lnum + 1 .. ":" .. item.col, "Comment")
         end
       end
 
       -- record the longest line length for later use
-      if #line > longest_line_len then longest_line_len = #line end
+      if #line > longest_line_len then
+        longest_line_len = #line
+      end
       -- insert the entire line
       table.insert(item_lines, line)
 
       -- vertical truncation
-      if #item_lines == max_item_lines_count-1 then
+      if #item_lines == max_item_lines_count - 1 then
         line = ""
         -- local remaining_lines_count = item_lines_that_would_have_been_rendererd_if_there_was_enough_space_count - #item_lines
         append_to_line("... and more", "Folded")
@@ -176,7 +198,7 @@ M.render = function(items)
   -- set position and offsets
   -- based on relative mouse position
   rline, rcol = utils.get_cursor_relative_pos()
-  if rline < #item_lines +2 then -- +2 because of the borders
+  if rline < #item_lines + 2 then -- +2 because of the borders
     position = "NE-CB"
   end
 
@@ -190,7 +212,7 @@ M.render = function(items)
     M.win = vim.api.nvim_open_win(M.bufnr, false, M.make_win_cfg(longest_line_len, #item_lines, position, xoff, yoff))
     -- vim.api.nvim_win_set_option(M.win, 'winblend', 50)
     vim.api.nvim_buf_set_lines(M.bufnr, 0, -1, false, item_lines)
-    -- vim.api.nvim_win_set_hl_ns(M.win, M.ns)
+  -- vim.api.nvim_win_set_hl_ns(M.win, M.ns)
   elseif M.win then
     vim.api.nvim_win_set_config(M.win, M.make_win_cfg(longest_line_len, #item_lines, position, xoff, yoff))
     vim.api.nvim_buf_set_lines(M.bufnr, 0, -1, false, item_lines)
